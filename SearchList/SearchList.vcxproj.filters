@@ -23,5 +23,8 @@
     <ClInclude Include="Framework.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
+    <ClInclude Include="logtime.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

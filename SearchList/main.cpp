@@ -15,19 +15,19 @@
 #include <ratio>
 #include <cmath>
 #include <Windows.h>
+#include <random>
 #include <cstdlib>
 #include <tuple>
 #include <cstdbool>
 #include <cassert>
 #include <cctype>
 #include "Framework.h"
+#include "logtime.h"
 
 
 const int MAX_RESULT_DOCUMENT_COUNT = 5;
 
 using namespace std;
-
-
 
 string ReadLine() {
     string s;
@@ -41,7 +41,6 @@ int ReadLineWithNumber() {
     ReadLine();
     return result;
 }
-
 
 std::vector<std::string> SplitIntoWords(std::string_view str) {
     std::vector<std::string> result;
@@ -560,6 +559,13 @@ private:
     Stack<Type> elements_;
 };
 
+std::vector<std::vector<Document>> ProcessQueries(const SearchServer& search_server, const std::vector<std::string>& queries)
+{
+    std::vector<std::vector<Document>> result(queries.size());
+    std::transform(queries.begin(), queries.end(), result.begin(), [&](const std::string& query) {return search_server.FindTopDocuments(query); });
+    return result;
+}
+
 /* Доделать !!
 class RequestQueue {
 public:
@@ -592,7 +598,6 @@ private:
     const static int min_in_day_ = 1440;
 };
 */
-
 
 /*
 void UnitTestingSeaarchServer()
@@ -650,7 +655,7 @@ void UnitTestingSeaarchServer()
 void Test_2() {
     setlocale(LC_ALL, "russian");
 
-    
+
     SortedStack<int> stack;
     vector<int> values{ 10, 20, 30, 40, 50 };
 
@@ -660,7 +665,7 @@ void Test_2() {
         stack.Push(values[i]);
         stack.Print();
     }
-    
+
     /*
     SearchServer search_server("and in at"s);
     RequestQueue request_queue(search_server);
@@ -685,9 +690,104 @@ void Test_2() {
     */
 }
 
+void Test3() {
+    SearchServer search_server("and with"s);
+
+    int id = 0;
+    for (
+        const string& text : {
+            "funny pet and nasty rat"s,
+            "funny pet with curly hair"s,
+            "funny pet and not very nasty rat"s,
+            "pet with rat and rat and rat"s,
+            "nasty rat with curly hair"s,
+        }
+        ) {
+        search_server.AddDocument(++id, text, DocumentStatus::ACTUAL, { 1, 2 });
+    }
+
+    const vector<string> queries = {
+        "nasty rat -not"s,
+        "not very funny nasty pet"s,
+        "curly hair"s
+    };
+    id = 0;
+    for (
+        const auto& documents : ProcessQueries(search_server, queries)
+        ) {
+        cout << documents.size() << " documents for query ["s << queries[id++] << "]"s << endl;
+    }
+
+}
+
+string GenerateWord(mt19937& generator, int max_length) {
+    const int length = uniform_int_distribution(1, max_length)(generator);
+    string word;
+    word.reserve(length);
+    for (int i = 0; i < length; ++i) {
+        word.push_back(uniform_int_distribution('a', 'z')(generator));
+    }
+    return word;
+}
+
+vector<string> GenerateDictionary(mt19937& generator, int word_count, int max_length) {
+    vector<string> words;
+    words.reserve(word_count);
+    for (int i = 0; i < word_count; ++i) {
+        words.push_back(GenerateWord(generator, max_length));
+    }
+    sort(words.begin(), words.end());
+    words.erase(unique(words.begin(), words.end()), words.end());
+    return words;
+}
+
+string GenerateQuery(mt19937& generator, const vector<string>& dictionary, int max_word_count) {
+    const int word_count = uniform_int_distribution(1, max_word_count)(generator);
+    string query;
+    for (int i = 0; i < word_count; ++i) {
+        if (!query.empty()) {
+            query.push_back(' ');
+        }
+        query += dictionary[uniform_int_distribution<int>(0, dictionary.size() - 1)(generator)];
+    }
+    return query;
+}
+
+vector<string> GenerateQueries(mt19937& generator, const vector<string>& dictionary, int query_count, int max_word_count) {
+    vector<string> queries;
+    queries.reserve(query_count);
+    for (int i = 0; i < query_count; ++i) {
+        queries.push_back(GenerateQuery(generator, dictionary, max_word_count));
+    }
+    return queries;
+}
+
+template <typename QueriesProcessor>
+void Test(string_view mark, QueriesProcessor processor, const SearchServer& search_server, const vector<string>& queries) {
+    LOG_DURATION(mark);
+    const auto documents_lists = processor(search_server, queries);
+}
+
+#define TEST(processor) Test(#processor, processor, search_server, queries)
+
+void Test4()
+{
+    mt19937 generator;
+    const auto dictionary = GenerateDictionary(generator, 2'000, 25);
+    const auto documents = GenerateQueries(generator, dictionary, 20'000, 10);
+
+    SearchServer search_server(dictionary[0]);
+    for (size_t i = 0; i < documents.size(); ++i) {
+        search_server.AddDocument(i, documents[i], DocumentStatus::ACTUAL, { 1, 2, 3 });
+    }
+
+    const auto queries = GenerateQueries(generator, dictionary, 2'000, 7);
+    TEST(ProcessQueries);
+}
 
 int main()
 {
-    Test_2();
+    Test3();
+    Test4();
     return 0;
 }
