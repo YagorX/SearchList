@@ -27,7 +27,6 @@ const int MAX_RESULT_DOCUMENT_COUNT = 5;
 
 using namespace std;
 
-// framework for test
 
 
 string ReadLine() {
@@ -43,25 +42,22 @@ int ReadLineWithNumber() {
     return result;
 }
 
-vector<string> SplitIntoWords(const string& text) {
-    vector<string> words;
-    string word;
-    for (const char c : text) {
-        if (c == ' ') {
-            if (!word.empty()) {
-                words.push_back(word);
-                word.clear();
-            }
+
+std::vector<std::string> SplitIntoWords(std::string_view str) {
+    std::vector<std::string> result;
+    const int64_t pos_end = str.npos;
+    while (true) {
+        int64_t space = str.find(' ');
+        result.push_back(space == pos_end ? static_cast<string>(str.substr(0)) : static_cast<string> (str.substr(0, space)));
+        if (space == pos_end) {
+            break;
         }
         else {
-            word += c;
+            str.remove_prefix(space + 1);
         }
     }
-    if (!word.empty()) {
-        words.push_back(word);
-    }
 
-    return words;
+    return result;
 }
 
 struct Document {
@@ -648,6 +644,7 @@ void UnitTestingSeaarchServer()
     }
     std::cout << "TEST VALIED" << std::endl;
 }
+
 */
 
 void Test_2() {
@@ -688,8 +685,9 @@ void Test_2() {
     */
 }
 
+
 int main()
 {
-    //Test_2();
+    Test_2();
     return 0;
 }
