@@ -133,6 +133,10 @@
   <ItemGroup>
     <ClInclude Include="Framework.h" />
     <ClInclude Include="logtime.h" />
+    <ClInclude Include="ProcessQueries.h" />
+    <ClInclude Include="SearchServer.h" />
+    <ClInclude Include="TestProcessQueries.h" />
+    <ClInclude Include="TestSearchServer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
